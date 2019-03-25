@@ -5,7 +5,7 @@ android {
     buildToolsVersion "28.0.3"
     defaultConfig {
         applicationId "tw.com.zenii.realtime_traffic_info_app"
-        minSdkVersion 19
+        minSdkVersion 26
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -26,7 +26,7 @@ dependencies {
     implementation 'com.android.support:design:26.1.0'
     implementation 'com.loopj.android:android-async-http:1.4.9'
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
-    testImplementation'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
     androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })

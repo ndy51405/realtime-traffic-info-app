@@ -17,7 +17,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -29,8 +28,13 @@ import com.mongodb.client.model.Sorts;
 
 import org.bson.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -41,8 +45,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Thread mongoThread = new Thread(mongoRunnable);
     List<LatLng> stopPositions;
     List<LatLng> busPositions;
-    int DEFAULT_ZOOM = 12;
-    Polyline line;
+    HashMap<LatLng,String> plateNumb;
+    int DEFAULT_ZOOM = 17;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,13 +58,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             StrictMode.setThreadPolicy(policy);
         }
 
-        mongoThread.start();
-
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                new Thread(mongoRunnable).start();
+                Log.d("Time", LocalDateTime.now() +" ");
+            }
+        }, 0, 20, TimeUnit.SECONDS);
     }
 
     @Override
@@ -70,15 +75,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mongoThread = null;
     }
 
+    private String getUrl(LatLng origin, LatLng dest, String directionMode) {
+        // Origin of route
+        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+        // Destination of route
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+        // Mode
+        String mode = "mode=" + directionMode;
+        // Building the parameters to the web service
+        String parameters = str_origin + "&" + str_dest + "&" + mode;
+        // Output format
+        String output = "json";
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + getString(R.string.google_maps_key);
+        return url;
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
         stopPositions = mongoRunnable.getStopPosition();
         busPositions = mongoRunnable.getBusPosition();
-        for(int i = 0; i < stopPositions.size(); i++){
+        plateNumb = mongoRunnable.getPlateNumb();
+
+        for(int i = 0; i < stopPositions.size() - 1; i++){
 
             //String url = getUrl()
+            /*String url = getUrl(stopPositions.get(i), stopPositions.get(i+1),"driving");
+            new FetchURL(MapsActivity.this).execute(url, "driving");
+            Log.d("url", url);*/
+
             // 劃線的地方
             mMap.addPolyline(new PolylineOptions()
                     .addAll(stopPositions)
@@ -90,28 +117,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     stopPositions.get(0).longitude), DEFAULT_ZOOM));
         }
 
-        for(int i = 0; i < busPositions.size(); i++){
 
+        for (int i = 0; i < busPositions.size(); i++) {
             // 測試
-            Log.d("Lat" , "" + busPositions.get(i).latitude);
-            Log.d("Lng" , "" + busPositions.get(i).longitude);
+            Log.d("Lat", "" + busPositions.get(i).latitude);
+            Log.d("Lng", "" + busPositions.get(i).longitude);
+            Log.d("PlateNumb", "" + plateNumb.get(busPositions.get(i)));
 
             // Marker
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(busPositions.get(i).latitude,
-                            busPositions.get(i).longitude))
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus)));
-
+                                busPositions.get(i).longitude))
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
+                    .title(plateNumb.get(busPositions.get(i))));
         }
-
     }
+
 
     public class MongoRunnable implements Runnable{
 
         Handler handler;
         private double lat;
         private double lng;
-        private String subRouteId = "155102";
+        private String numb;
+        private ArrayList bundleSubRouteId = new ArrayList();
+        private String subRouteId = "181802";
+        SupportMapFragment mapFragment;
 
         @SuppressLint("HandlerLeak")
         @Override
@@ -120,14 +151,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Looper.prepare();
             // 設定 Handler，讓 producer 可以插入訊息
 
+            //Bundle
+            bundleSubRouteId = getIntent().getExtras().getStringArrayList("bndSubRouteId");
+            Log.d("bndSubRouteId", bundleSubRouteId + "");
+            subRouteId = bundleSubRouteId.get(0) + "01";
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
 
                     // 更新UI
-                    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    mapFragment = (SupportMapFragment) getSupportFragmentManager()
                             .findFragmentById(R.id.map);
-
                     mapFragment.getMapAsync(MapsActivity.this);
 
                 }
@@ -174,11 +209,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lng = stops.getAsJsonObject()
                         .get("PositionLon").getAsDouble();
                 busPositions.add(new LatLng(lat, lng));
-
             }
             return busPositions;
         }
 
+        public HashMap<LatLng, String> getPlateNumb(){
+            MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
+            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
+                    .iterator();
+            busPositions = new ArrayList<>();
+            plateNumb = new HashMap<>();
+            while(cursor.hasNext()){
+                // parse response json here
+                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
+                JsonObject stops = res.get("BusPosition").getAsJsonObject();
+                numb = res.get("PlateNumb").getAsString();
+                lat = stops.getAsJsonObject()
+                        .get("PositionLat").getAsDouble();
+                lng = stops.getAsJsonObject()
+                        .get("PositionLon").getAsDouble();
+                busPositions.add(new LatLng(lat, lng));
+                plateNumb.put(new LatLng(lat, lng), numb);
+            }
+            return plateNumb;
+        }
     }
 
     public void closeActivity(View view) {

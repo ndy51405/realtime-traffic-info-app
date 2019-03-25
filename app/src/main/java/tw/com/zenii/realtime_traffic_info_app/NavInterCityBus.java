@@ -6,29 +6,24 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
-import android.widget.TextView;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -81,22 +76,6 @@ public class NavInterCityBus extends AppCompatActivity
             }
         });
 
-        /*list.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.d("id is: ", ""+ parent.getId());
-                if (position == 0){
-                    Intent intent = new Intent();
-                    intent.setClass(NavInterCityBus.this, MapsActivity.class);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });*/
     }
 
     @Override
@@ -172,15 +151,19 @@ public class NavInterCityBus extends AppCompatActivity
                 // 當訊息被送到 MongoRunnable 時的 callback
                 public void handleMessage(Message msgIn) {
                     final String subRouteId = msgIn.obj.toString();
-                    final List<String> results = new ArrayList<>();
+                    final ArrayList<String> results = new ArrayList<>();
+                    final ArrayList<String> bundleSubRouteId = new ArrayList<>();
                     String result;
+                    String bndSubRouteId;
 
                     JsonArray resJa = InterCityBus.getRouteSearchResult(subRouteId);
                     for(JsonElement je : resJa) {
                         JsonObject jo = je.getAsJsonObject();
+                        bndSubRouteId = jo.get("SubRouteID").getAsString();
                         result = jo.get("SubRouteID").getAsString() + "\n" + jo.get("Headsign").getAsString();
                         Log.d("result", result);
                         results.add(result);
+                        bundleSubRouteId.add(bndSubRouteId);
                     }
 
                     runOnUiThread(new Runnable() {
@@ -189,6 +172,15 @@ public class NavInterCityBus extends AppCompatActivity
                             list = findViewById(R.id.listView);
                             final ArrayAdapter adapter = new ArrayAdapter(NavInterCityBus.this, android.R.layout.simple_list_item_1, results);
                             list.setAdapter(adapter);
+
+                            Intent intent = new Intent();
+                            intent.setClass(NavInterCityBus.this, MapsActivity.class);
+
+                            Bundle bundle = new Bundle();
+                            bundle.putStringArrayList("bndSubRouteId", bundleSubRouteId);
+                            intent.putExtras(bundle);
+
+                            startActivity(intent);
                         }
                     });
                 }
