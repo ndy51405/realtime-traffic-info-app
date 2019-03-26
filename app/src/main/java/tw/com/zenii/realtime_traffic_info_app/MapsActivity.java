@@ -45,8 +45,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Thread mongoThread = new Thread(mongoRunnable);
     List<LatLng> stopPositions;
     List<LatLng> busPositions;
-    HashMap<LatLng,String> plateNumb;
-    int DEFAULT_ZOOM = 17;
+    HashMap<LatLng, String> plateNumb;
+    HashMap<LatLng, String> stopName;
+    String subRouteId;
+    int DEFAULT_ZOOM = 13;
+    boolean once = true; // 只執行一次
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,36 +78,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mongoThread = null;
     }
 
-    private String getUrl(LatLng origin, LatLng dest, String directionMode) {
-        // Origin of route
-        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
-        // Destination of route
-        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
-        // Mode
-        String mode = "mode=" + directionMode;
-        // Building the parameters to the web service
-        String parameters = str_origin + "&" + str_dest + "&" + mode;
-        // Output format
-        String output = "json";
-        // Building the url to the web service
-        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + getString(R.string.google_maps_key);
-        return url;
-    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        googleMap.clear();
 
-        stopPositions = mongoRunnable.getStopPosition();
-        busPositions = mongoRunnable.getBusPosition();
-        plateNumb = mongoRunnable.getPlateNumb();
+        stopPositions = mongoRunnable.getStopPosition(subRouteId);
+        stopName = mongoRunnable.getStopName(subRouteId);
+        busPositions = mongoRunnable.getBusPosition(subRouteId);
+        plateNumb = mongoRunnable.getPlateNumb(subRouteId);
 
         for(int i = 0; i < stopPositions.size() - 1; i++){
-
-            //String url = getUrl()
-            /*String url = getUrl(stopPositions.get(i), stopPositions.get(i+1),"driving");
-            new FetchURL(MapsActivity.this).execute(url, "driving");
-            Log.d("url", url);*/
 
             // 劃線的地方
             mMap.addPolyline(new PolylineOptions()
@@ -112,13 +97,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .color(Color.BLACK)
                     .width(7));
 
-            // 鏡頭初始位置
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(stopPositions.get(0).latitude,
-                    stopPositions.get(0).longitude), DEFAULT_ZOOM));
+            // Marker
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(stopPositions.get(i).latitude,
+                                stopPositions.get(i).longitude))
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_stop))
+                    .title(stopName.get(stopPositions.get(i))));
+
+            if (once) {
+                // 鏡頭初始位置
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(stopPositions.get(0).latitude,
+                        stopPositions.get(0).longitude), DEFAULT_ZOOM));
+                once = false;
+            }
         }
 
-
         for (int i = 0; i < busPositions.size(); i++) {
+
             // 測試
             Log.d("Lat", "" + busPositions.get(i).latitude);
             Log.d("Lng", "" + busPositions.get(i).longitude);
@@ -130,18 +125,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 busPositions.get(i).longitude))
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
                     .title(plateNumb.get(busPositions.get(i))));
+
         }
     }
 
 
-    public class MongoRunnable implements Runnable{
+    public class MongoRunnable implements Runnable {
 
         Handler handler;
         private double lat;
         private double lng;
         private String numb;
+        private String name;
         private ArrayList bundleSubRouteId = new ArrayList();
-        private String subRouteId = "181802";
         SupportMapFragment mapFragment;
 
         @SuppressLint("HandlerLeak")
@@ -151,7 +147,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Looper.prepare();
             // 設定 Handler，讓 producer 可以插入訊息
 
-            //Bundle
+            //Bundle 傳過來應只剩 181801 or 181802
             bundleSubRouteId = getIntent().getExtras().getStringArrayList("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
             subRouteId = bundleSubRouteId.get(0) + "01";
@@ -172,7 +168,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Looper.loop();
         }
 
-        public List<LatLng> getStopPosition(){
+        public List<LatLng> getStopPosition(String subRouteId){
             MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
             MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
                     .sort(Sorts.ascending("StopSequence"))
@@ -195,7 +191,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return stopPositions;
         }
 
-        public List<LatLng> getBusPosition(){
+        public HashMap<LatLng, String> getStopName(String subRouteId){
+            MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
+            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
+                    .iterator();
+            stopPositions = new ArrayList<>();
+            stopName = new HashMap<>();
+            while(cursor.hasNext()){
+                // parse response json here
+                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
+                JsonArray stops = res.get("Stops").getAsJsonArray();
+                for(JsonElement stop : stops) {
+                    lat = stop.getAsJsonObject()
+                            .get("StopPosition").getAsJsonObject()
+                            .get("PositionLat").getAsDouble();
+                    lng = stop.getAsJsonObject()
+                            .get("StopPosition").getAsJsonObject()
+                            .get("PositionLon").getAsDouble();
+                    name = stop.getAsJsonObject()
+                            .get("StopName").getAsJsonObject()
+                            .get("Zh_tw").getAsString();
+                    stopPositions.add(new LatLng(lat, lng));
+                    stopName.put(new LatLng(lat, lng), name);
+                }
+            }
+            return stopName;
+        }
+
+        public List<LatLng> getBusPosition(String subRouteId){
             MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
             MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
                     .iterator();
@@ -213,7 +236,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return busPositions;
         }
 
-        public HashMap<LatLng, String> getPlateNumb(){
+        public HashMap<LatLng, String> getPlateNumb(String subRouteId){
             MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
             MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
                     .iterator();
@@ -233,6 +256,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             return plateNumb;
         }
+
     }
 
     public void closeActivity(View view) {
