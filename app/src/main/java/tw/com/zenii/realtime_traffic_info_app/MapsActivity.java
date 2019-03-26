@@ -50,12 +50,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     HashMap<LatLng, String> plateNumb;
     HashMap<LatLng, String> stopName;
     String subRouteId = "181801";
-    int DEFAULT_ZOOM = 13;
+    int DEFAULT_ZOOM = 10;
     boolean once = true; // 只執行一次
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
-    public static int lastPosition = 0;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,25 +65,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
-
-        // 設定 ViewPager
-        mViewPager = findViewById(R.id.container);
-        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
-            @Override
-            public void onPageSelected(int position) {
-                lastPosition = position;
-            }
-            @Override
-            public void onPageScrollStateChanged(int state) {}
-        });
-
-        setupViewPager(mViewPager);
-
-        // 設定 Tabs
-        mTabLayout = findViewById(R.id.tabs);
-        mTabLayout.setupWithViewPager(mViewPager);
 
         // 定時抓資料
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -100,8 +79,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new GoFragment(), "Title 1");
-        adapter.addFragment(new BackFragment(), "Title 2");
+        adapter.addFragment(new GoFragment(), "去程");
+        adapter.addFragment(new BackFragment(), "回程");
 
         viewPager.setAdapter(adapter);
     }
@@ -173,6 +152,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         private String numb;
         private String name;
         private ArrayList bundleSubRouteId = new ArrayList();
+        private boolean first = true;
         SupportMapFragment mapFragment;
 
         @SuppressLint("HandlerLeak")
@@ -191,10 +171,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void run() {
 
-                    // 更新UI
-                    mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.map);
-                    mapFragment.getMapAsync(MapsActivity.this);
+                    // 設定 ViewPager
+                    mViewPager = findViewById(R.id.container);
+                    mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                        @Override
+                        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                            if (first && positionOffset == 0 && positionOffsetPixels == 0){
+                                onPageSelected(0);
+                                first = false;
+                            }
+                        }
+                        @Override
+                        public void onPageSelected(int position) {
+                            switch (position) {
+                                case 0:
+                                    subRouteId = "181801";
+                                    Log.d("onPageSelected", subRouteId);
+                                    break;
+                                case 1:
+                                    subRouteId = "181802";
+                                    Log.d("onPageSelected", subRouteId);
+                                    break;
+                            }
+
+                            // 更新UI
+                            mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                                    .findFragmentById(R.id.map);
+                            mapFragment.getMapAsync(MapsActivity.this);
+                            once = true;
+
+                        }
+                        @Override
+                        public void onPageScrollStateChanged(int state) {}
+                    });
+
+                    setupViewPager(mViewPager);
+
+                    // 設定 Tabs
+                    mTabLayout = findViewById(R.id.tabs);
+                    mTabLayout.setupWithViewPager(mViewPager);
 
                 }
             });
