@@ -6,7 +6,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.StrictMode;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 
@@ -47,20 +49,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     List<LatLng> busPositions;
     HashMap<LatLng, String> plateNumb;
     HashMap<LatLng, String> stopName;
-    String subRouteId;
+    String subRouteId = "181801";
     int DEFAULT_ZOOM = 13;
     boolean once = true; // 只執行一次
+    private ViewPager mViewPager;
+    private TabLayout mTabLayout;
+    public static int lastPosition = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        // 處理 Thread
         if (android.os.Build.VERSION.SDK_INT > 9) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
 
+        // 設定 ViewPager
+        mViewPager = findViewById(R.id.container);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
+            @Override
+            public void onPageSelected(int position) {
+                lastPosition = position;
+            }
+            @Override
+            public void onPageScrollStateChanged(int state) {}
+        });
+
+        setupViewPager(mViewPager);
+
+        // 設定 Tabs
+        mTabLayout = findViewById(R.id.tabs);
+        mTabLayout.setupWithViewPager(mViewPager);
+
+        // 定時抓資料
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -69,6 +96,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("Time", LocalDateTime.now() +" ");
             }
         }, 0, 20, TimeUnit.SECONDS);
+    }
+
+    private void setupViewPager(ViewPager viewPager) {
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new GoFragment(), "Title 1");
+        adapter.addFragment(new BackFragment(), "Title 2");
+
+        viewPager.setAdapter(adapter);
     }
 
     @Override
@@ -148,9 +183,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // 設定 Handler，讓 producer 可以插入訊息
 
             //Bundle 傳過來應只剩 181801 or 181802
-            bundleSubRouteId = getIntent().getExtras().getStringArrayList("bndSubRouteId");
+            /*bundleSubRouteId = getIntent().getExtras().getStringArrayList("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
-            subRouteId = bundleSubRouteId.get(0) + "01";
+            subRouteId = bundleSubRouteId.get(0) + "01";*/
 
             runOnUiThread(new Runnable() {
                 @Override
