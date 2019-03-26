@@ -18,6 +18,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.JsonArray;
@@ -49,7 +50,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     List<LatLng> busPositions;
     HashMap<LatLng, String> plateNumb;
     HashMap<LatLng, String> stopName;
-    String subRouteId = "181801";
+    String subRouteId;
     int DEFAULT_ZOOM = 10;
     boolean once = true; // 只執行一次
     private ViewPager mViewPager;
@@ -98,6 +99,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         googleMap.clear();
 
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
+                this, R.raw.style_json
+        ));
+
         stopPositions = mongoRunnable.getStopPosition(subRouteId);
         stopName = mongoRunnable.getStopName(subRouteId);
         busPositions = mongoRunnable.getBusPosition(subRouteId);
@@ -108,7 +113,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // 劃線的地方
             mMap.addPolyline(new PolylineOptions()
                     .addAll(stopPositions)
-                    .color(Color.BLACK)
+                    .color(Color.rgb(91, 142, 125))
                     .width(7));
 
             // Marker
@@ -151,7 +156,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         private double lng;
         private String numb;
         private String name;
-        private ArrayList bundleSubRouteId = new ArrayList();
+        private String bundleSubRouteId;
         private boolean first = true;
         SupportMapFragment mapFragment;
 
@@ -162,10 +167,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Looper.prepare();
             // 設定 Handler，讓 producer 可以插入訊息
 
-            //Bundle 傳過來應只剩 181801 or 181802
-            /*bundleSubRouteId = getIntent().getExtras().getStringArrayList("bndSubRouteId");
+            //Bundle 傳過來應只剩 1818
+            bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
-            subRouteId = bundleSubRouteId.get(0) + "01";*/
+
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -185,11 +190,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         public void onPageSelected(int position) {
                             switch (position) {
                                 case 0:
-                                    subRouteId = "181801";
+                                    subRouteId = bundleSubRouteId + "01";
                                     Log.d("onPageSelected", subRouteId);
                                     break;
                                 case 1:
-                                    subRouteId = "181802";
+                                    subRouteId = bundleSubRouteId + "02";
                                     Log.d("onPageSelected", subRouteId);
                                     break;
                             }

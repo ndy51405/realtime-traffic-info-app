@@ -15,6 +15,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
@@ -29,7 +31,6 @@ public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private NavInterCityBus.MongoRunnable mongoRunnable = new NavInterCityBus.MongoRunnable();
-    private Thread mongoThread = new Thread(mongoRunnable);
     private SearchView searchView;
     private ListView list;
 
@@ -55,7 +56,7 @@ public class NavInterCityBus extends AppCompatActivity
             @Override
             public boolean onQueryTextSubmit(String query) {
                 Log.d("search",query);
-                mongoThread.start();
+                new Thread(mongoRunnable).start();
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -151,36 +152,44 @@ public class NavInterCityBus extends AppCompatActivity
                 // 當訊息被送到 MongoRunnable 時的 callback
                 public void handleMessage(Message msgIn) {
                     final String subRouteId = msgIn.obj.toString();
-                    final ArrayList<String> results = new ArrayList<>();
-                    final ArrayList<String> bundleSubRouteId = new ArrayList<>();
+                    final ArrayList<String> routeNameResults = new ArrayList<>();
+                    final ArrayList<String> routeIdResults = new ArrayList<>();
                     String result;
-                    String bndSubRouteId;
+                    String resultId;
 
                     JsonArray resJa = InterCityBus.getRouteSearchResult(subRouteId);
                     for(JsonElement je : resJa) {
                         JsonObject jo = je.getAsJsonObject();
-                        bndSubRouteId = jo.get("SubRouteID").getAsString();
                         result = jo.get("SubRouteID").getAsString() + "\n" + jo.get("Headsign").getAsString();
+                        resultId = jo.get("SubRouteID").getAsString();
                         Log.d("result", result);
-                        results.add(result);
-                        bundleSubRouteId.add(bndSubRouteId);
+                        routeNameResults.add(result);
+                        routeIdResults.add(resultId);
                     }
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             list = findViewById(R.id.listView);
-                            final ArrayAdapter adapter = new ArrayAdapter(NavInterCityBus.this, android.R.layout.simple_list_item_1, results);
+                            final ArrayAdapter adapter = new ArrayAdapter(NavInterCityBus.this, android.R.layout.simple_list_item_1, routeNameResults);
                             list.setAdapter(adapter);
 
-                            Intent intent = new Intent();
-                            intent.setClass(NavInterCityBus.this, MapsActivity.class);
+                            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                    Intent intent = new Intent();
+                                    intent.setClass(NavInterCityBus.this, MapsActivity.class);
 
-                            Bundle bundle = new Bundle();
-                            bundle.putStringArrayList("bndSubRouteId", bundleSubRouteId);
-                            intent.putExtras(bundle);
+                                    String bundleResult = routeIdResults.get(position);
+                                    Log.d("onItemClick", routeIdResults.get(position)+"");
 
-                            startActivity(intent);
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("bndSubRouteId", bundleResult);
+                                    intent.putExtras(bundle);
+
+                                    startActivity(intent);
+                                }
+                            });
                         }
                     });
                 }
