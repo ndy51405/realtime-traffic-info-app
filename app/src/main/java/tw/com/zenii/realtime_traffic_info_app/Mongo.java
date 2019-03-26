@@ -5,7 +5,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-class Mongo {
+public class Mongo {
 
     static MongoCollection getCollection(String collection){
         String MONGO_HOST = "mongodb://192.168.1.237:27017";

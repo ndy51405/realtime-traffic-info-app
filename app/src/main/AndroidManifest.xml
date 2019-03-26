@@ -19,7 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".bak.MainActivity" />
-        <activity android:name=".IcbActivity" />
+        <activity android:name=".bak.IcbActivity" />
         <activity android:name=".RouteActivity" />
         <activity
             android:name=".NavInterCityBus"
