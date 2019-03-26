@@ -39,6 +39,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import tw.com.zenii.realtime_traffic_info_app.tabview.BackFragment;
+import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
+import tw.com.zenii.realtime_traffic_info_app.tabview.ViewPagerAdapter;
+
 import static com.mongodb.client.model.Filters.eq;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -116,19 +120,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .color(Color.rgb(91, 142, 125))
                     .width(7));
 
-            // Marker
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(stopPositions.get(i).latitude,
-                                stopPositions.get(i).longitude))
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_stop))
-                    .title(stopName.get(stopPositions.get(i))));
-
             if (once) {
                 // 鏡頭初始位置
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(stopPositions.get(0).latitude,
                         stopPositions.get(0).longitude), DEFAULT_ZOOM));
                 once = false;
             }
+        }
+
+        for(int i = 0; i < stopPositions.size(); i++) {
+
+            // Marker
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(stopPositions.get(i).latitude,
+                            stopPositions.get(i).longitude))
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_stop))
+                    .title(stopName.get(stopPositions.get(i))));
+
         }
 
         for (int i = 0; i < busPositions.size(); i++) {

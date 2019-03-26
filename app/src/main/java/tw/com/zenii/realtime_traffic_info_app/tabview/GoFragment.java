@@ -1,4 +1,4 @@
-package tw.com.zenii.realtime_traffic_info_app;
+package tw.com.zenii.realtime_traffic_info_app.tabview;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -8,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import tw.com.zenii.realtime_traffic_info_app.R;
 
 public class GoFragment extends Fragment {
 

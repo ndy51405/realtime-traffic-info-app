@@ -1,4 +1,4 @@
-package tw.com.zenii.realtime_traffic_info_app;
+package tw.com.zenii.realtime_traffic_info_app.tabview;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
