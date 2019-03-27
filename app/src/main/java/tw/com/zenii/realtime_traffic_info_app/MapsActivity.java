@@ -21,7 +21,7 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -65,7 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 new Thread(mongoRunnable).start();
-                Log.d("Time", LocalDateTime.now() +" ");
+                Log.d("Time", new Date().toString());
             }
         }, 0, 20, TimeUnit.SECONDS);
     }
@@ -73,8 +73,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // 設定 ViewPager
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new GoFragment(), "去程");
-        adapter.addFragment(new BackFragment(), "回程");
+        adapter.addFragment(new GoFragment(), getString(R.string.go));
+        adapter.addFragment(new BackFragment(), getString(R.string.back));
 
         viewPager.setAdapter(adapter);
     }
@@ -156,7 +156,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Bundle
             bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
-
 
             runOnUiThread(new Runnable() {
                 @Override

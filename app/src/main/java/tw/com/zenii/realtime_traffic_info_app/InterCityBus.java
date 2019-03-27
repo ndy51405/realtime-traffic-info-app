@@ -32,11 +32,13 @@ public class InterCityBus {
     private static double lng;
     private static String numb;
     private static String name;
+
+    private static ArrayList<String> estimateTimes;
+    private static List<String> stopNames;
     private static ArrayList<LatLng> stopPositions;
     private static List<LatLng> busPositions;
     private static HashMap<LatLng, String> plateNumb;
     private static HashMap<LatLng, String> stopName;
-    private static ArrayList<String> stopNameOnly;
 
     static JsonArray getRouteSearchResult(String key) {
         JsonArray jaToReturn = new JsonArray();
@@ -75,8 +77,9 @@ public class InterCityBus {
         return jaToReturn;
     }
 
+    // 預計到站時間
     public static ArrayList<String> extractEstimateTime(String subRouteId) {
-        ArrayList<String> estimateTimes = new ArrayList<>();
+        estimateTimes = new ArrayList<>();
         MongoCollection mongoCollection = Mongo.getCollection("icb_rtEstimated");
         Date beforeTime = getBeforeMinute();
         // noinspection unchecked
@@ -95,8 +98,9 @@ public class InterCityBus {
         return estimateTimes;
     }
 
+    // 預計到站之站牌名稱
     public static List<String> extractStopNames(String subRouteId) {
-        final List<String> stopNames = new ArrayList<>();
+        stopNames = new ArrayList<>();
         MongoCollection mongoCollection = Mongo.getCollection("icb_rtEstimated");
         Date beforeTime = getBeforeMinute();
         // noinspection unchecked
@@ -120,6 +124,7 @@ public class InterCityBus {
         return calendar.getTime();
     }
 
+    // 取得站牌位置
     public static List<LatLng> getStopPosition(String subRouteId){
         MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
         MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
@@ -143,6 +148,7 @@ public class InterCityBus {
         return stopPositions;
     }
 
+    // 取得站牌名稱（搭配經緯度）
     public static HashMap<LatLng, String> getStopName(String subRouteId){
         MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
         MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
@@ -170,6 +176,7 @@ public class InterCityBus {
         return stopName;
     }
 
+    // 取得公車位置
     public static List<LatLng> getBusPosition(String subRouteId){
         MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
         MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
@@ -188,6 +195,7 @@ public class InterCityBus {
         return busPositions;
     }
 
+    // 取得車牌號碼（搭配經緯度）
     public static HashMap<LatLng, String> getPlateNumb(String subRouteId){
         MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
         MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
@@ -207,24 +215,5 @@ public class InterCityBus {
             plateNumb.put(new LatLng(lat, lng), numb);
         }
         return plateNumb;
-    }
-
-    public static ArrayList<String> getStopNameOnly(String subRouteId){
-        MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
-        MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
-                .iterator();
-        stopNameOnly = new ArrayList<>();
-        while(cursor.hasNext()){
-            // parse response json here
-            JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
-            JsonArray stops = res.get("Stops").getAsJsonArray();
-            for(JsonElement stop : stops) {
-                name = stop.getAsJsonObject()
-                        .get("StopName").getAsJsonObject()
-                        .get("Zh_tw").getAsString();
-                stopNameOnly.add(name);
-            }
-        }
-        return stopNameOnly;
     }
 }

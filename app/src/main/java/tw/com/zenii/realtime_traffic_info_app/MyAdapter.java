@@ -45,15 +45,21 @@ public class MyAdapter extends BaseAdapter{
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder = null;
-        if(convertView==null){
+
+        ViewHolder holder;
+
+        if (convertView == null) {
+
             convertView = myInflater.inflate(R.layout.listview_tabs, null);
+
             holder = new ViewHolder(
                     (TextView) convertView.findViewById(R.id.txtEstimateTime),
                     (TextView) convertView.findViewById(R.id.txtStopName)
             );
+
             convertView.setTag(holder);
-        }else{
+
+        } else {
             holder = (ViewHolder) convertView.getTag();
         }
 

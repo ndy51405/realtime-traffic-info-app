@@ -34,16 +34,16 @@ public class GoFragment extends Fragment {
         view = inflater.inflate(R.layout.layout_item, container, false);
         list = view.findViewById(R.id.list_stopName);
 
-        Log.d("EstimateTime", "Here");
         if (MapsActivity.subRouteId != null) {
             stopName = InterCityBus.extractStopNames(MapsActivity.subRouteId);
             estimateTime = InterCityBus.extractEstimateTime(MapsActivity.subRouteId);
             stopList = new ArrayList();
+
             for (int i = 0; i < estimateTime.size() ; i++) {
-                Log.d("EstimateTime", estimateTime.get(i) + "\t" + estimateTime.size());
+                Log.d("EstimateTime", estimateTime.get(i) + "\t" + stopName.get(i));
                 stopList.add(new Stop(estimateTime.get(i), stopName.get(i)));
-                //Log.d("Here", stopList.get(i)+"");
             }
+
             adapter = new MyAdapter(getActivity(), stopList);
             list.setAdapter(adapter);
         }
