@@ -10,7 +10,6 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.View;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,18 +20,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Sorts;
-
-import org.bson.Document;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -43,8 +32,6 @@ import tw.com.zenii.realtime_traffic_info_app.tabview.BackFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.ViewPagerAdapter;
 
-import static com.mongodb.client.model.Filters.eq;
-
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -54,11 +41,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     List<LatLng> busPositions;
     HashMap<LatLng, String> plateNumb;
     HashMap<LatLng, String> stopName;
-    String subRouteId;
+    public static String subRouteId;
     int DEFAULT_ZOOM = 10;
     boolean once = true; // 只執行一次
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
+    ScheduledExecutorService executorService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +60,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         // 定時抓資料
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -82,6 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }, 0, 20, TimeUnit.SECONDS);
     }
 
+    // 設定 ViewPager
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new GoFragment(), "去程");
@@ -90,14 +79,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         viewPager.setAdapter(adapter);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mongoThread.interrupt();
-        mongoThread = null;
-    }
-
-
+    // 設定地圖
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -107,12 +89,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 this, R.raw.style_json
         ));
 
-        stopPositions = mongoRunnable.getStopPosition(subRouteId);
-        stopName = mongoRunnable.getStopName(subRouteId);
-        busPositions = mongoRunnable.getBusPosition(subRouteId);
-        plateNumb = mongoRunnable.getPlateNumb(subRouteId);
+        stopPositions = InterCityBus.getStopPosition(subRouteId);
+        stopName = InterCityBus.getStopName(subRouteId);
+        busPositions = InterCityBus.getBusPosition(subRouteId);
+        plateNumb = InterCityBus.getPlateNumb(subRouteId);
 
-        for(int i = 0; i < stopPositions.size() - 1; i++){
+        for (int i = 0; i < stopPositions.size() - 1; i++){
 
             // 劃線的地方
             mMap.addPolyline(new PolylineOptions()
@@ -128,7 +110,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
-        for(int i = 0; i < stopPositions.size(); i++) {
+        for (int i = 0; i < stopPositions.size(); i++) {
 
             // Marker
             mMap.addMarker(new MarkerOptions()
@@ -156,14 +138,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
+    // Thread
     public class MongoRunnable implements Runnable {
 
         Handler handler;
-        private double lat;
-        private double lng;
-        private String numb;
-        private String name;
         private String bundleSubRouteId;
         private boolean first = true;
         SupportMapFragment mapFragment;
@@ -175,7 +153,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Looper.prepare();
             // 設定 Handler，讓 producer 可以插入訊息
 
-            //Bundle 傳過來應只剩 1818
+            // Bundle
             bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
 
@@ -230,99 +208,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // blocking 呼叫，讓 message queue 可發送訊息給 consumer thread
             Looper.loop();
         }
-
-        public List<LatLng> getStopPosition(String subRouteId){
-            MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
-            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
-                    .sort(Sorts.ascending("StopSequence"))
-                    .iterator();
-            stopPositions = new ArrayList<>();
-            while(cursor.hasNext()){
-                // parse response json here
-                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
-                JsonArray stops = res.get("Stops").getAsJsonArray();
-                for(JsonElement stop : stops) {
-                    lat = stop.getAsJsonObject()
-                            .get("StopPosition").getAsJsonObject()
-                            .get("PositionLat").getAsDouble();
-                    lng = stop.getAsJsonObject()
-                            .get("StopPosition").getAsJsonObject()
-                            .get("PositionLon").getAsDouble();
-                    stopPositions.add(new LatLng(lat, lng));
-                }
-            }
-            return stopPositions;
-        }
-
-        public HashMap<LatLng, String> getStopName(String subRouteId){
-            MongoCollection mongoCollection = Mongo.getCollection("icb_stopOfRoute");
-            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
-                    .iterator();
-            stopPositions = new ArrayList<>();
-            stopName = new HashMap<>();
-            while(cursor.hasNext()){
-                // parse response json here
-                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
-                JsonArray stops = res.get("Stops").getAsJsonArray();
-                for(JsonElement stop : stops) {
-                    lat = stop.getAsJsonObject()
-                            .get("StopPosition").getAsJsonObject()
-                            .get("PositionLat").getAsDouble();
-                    lng = stop.getAsJsonObject()
-                            .get("StopPosition").getAsJsonObject()
-                            .get("PositionLon").getAsDouble();
-                    name = stop.getAsJsonObject()
-                            .get("StopName").getAsJsonObject()
-                            .get("Zh_tw").getAsString();
-                    stopPositions.add(new LatLng(lat, lng));
-                    stopName.put(new LatLng(lat, lng), name);
-                }
-            }
-            return stopName;
-        }
-
-        public List<LatLng> getBusPosition(String subRouteId){
-            MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
-            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
-                    .iterator();
-            busPositions = new ArrayList<>();
-            while(cursor.hasNext()){
-                // parse response json here
-                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
-                JsonObject stops = res.get("BusPosition").getAsJsonObject();
-                lat = stops.getAsJsonObject()
-                        .get("PositionLat").getAsDouble();
-                lng = stops.getAsJsonObject()
-                        .get("PositionLon").getAsDouble();
-                busPositions.add(new LatLng(lat, lng));
-            }
-            return busPositions;
-        }
-
-        public HashMap<LatLng, String> getPlateNumb(String subRouteId){
-            MongoCollection mongoCollection = Mongo.getCollection("icb_rtFrequency");
-            MongoCursor<Document> cursor =  mongoCollection.find(eq("SubRouteID", subRouteId))
-                    .iterator();
-            busPositions = new ArrayList<>();
-            plateNumb = new HashMap<>();
-            while(cursor.hasNext()){
-                // parse response json here
-                JsonObject res = new JsonParser().parse(cursor.next().toJson()).getAsJsonObject();
-                JsonObject stops = res.get("BusPosition").getAsJsonObject();
-                numb = res.get("PlateNumb").getAsString();
-                lat = stops.getAsJsonObject()
-                        .get("PositionLat").getAsDouble();
-                lng = stops.getAsJsonObject()
-                        .get("PositionLon").getAsDouble();
-                busPositions.add(new LatLng(lat, lng));
-                plateNumb.put(new LatLng(lat, lng), numb);
-            }
-            return plateNumb;
-        }
-
     }
 
-    public void closeActivity(View view) {
-        finish();
+    @Override
+    public void finish() {
+        super.finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mongoThread.interrupt();
+        mongoThread = null;
     }
 }

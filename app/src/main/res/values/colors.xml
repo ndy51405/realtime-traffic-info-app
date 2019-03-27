@@ -4,4 +4,7 @@
     <color name="colorPrimaryDark">#EFB752</color>
     <color name="colorAccent">#F4E285</color>
     <color name="line">#5B8E7D</color>
+    <color name="waiting">#5DAC81</color>
+    <color name="arriving">#C73E3A</color>
+    <color name="white">#fff</color>
 </resources>

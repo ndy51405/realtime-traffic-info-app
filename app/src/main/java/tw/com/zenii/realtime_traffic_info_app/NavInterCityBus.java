@@ -31,7 +31,6 @@ public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private NavInterCityBus.MongoRunnable mongoRunnable = new NavInterCityBus.MongoRunnable();
-    private Thread mongoThread = new Thread(mongoRunnable);
     private SearchView searchView;
     private ListView list;
 
