@@ -27,6 +27,8 @@ import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 
+import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
+
 public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 

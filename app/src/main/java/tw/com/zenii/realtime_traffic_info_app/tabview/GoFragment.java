@@ -8,7 +8,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
+import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,7 @@ public class GoFragment extends Fragment {
     List<String> stopName;
     List<String> estimateTime;
     private MyAdapter adapter;
+    private String route = MapsActivity.subRouteId;
 
     @Nullable
     @Override
@@ -34,19 +39,22 @@ public class GoFragment extends Fragment {
         view = inflater.inflate(R.layout.layout_item, container, false);
         list = view.findViewById(R.id.list_stopName);
 
-        if (MapsActivity.subRouteId != null) {
-            stopName = InterCityBus.extractStopNames(MapsActivity.subRouteId);
-            estimateTime = InterCityBus.extractEstimateTime(MapsActivity.subRouteId);
+        route = MapsActivity.subRouteId + "01";
+
+        if (route != null) {
+            Log.d("MapsActivity.subRouteId", route);
+            stopName = InterCityBus.extractStopNames(route);
+            estimateTime = InterCityBus.extractEstimateTime(route);
             stopList = new ArrayList();
 
             for (int i = 0; i < estimateTime.size() ; i++) {
                 Log.d("EstimateTime", estimateTime.get(i) + "\t" + stopName.get(i));
                 stopList.add(new Stop(estimateTime.get(i), stopName.get(i)));
             }
-
             adapter = new MyAdapter(getActivity(), stopList);
-            list.setAdapter(adapter);
         }
+
+        list.setAdapter(adapter);
         return view;
     }
 }

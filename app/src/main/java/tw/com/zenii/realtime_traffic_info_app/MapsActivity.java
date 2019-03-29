@@ -32,21 +32,23 @@ import tw.com.zenii.realtime_traffic_info_app.tabview.BackFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.ViewPagerAdapter;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap mMap;
-    private MongoRunnable mongoRunnable = new MongoRunnable();
-    private Thread mongoThread = new Thread(mongoRunnable);
+    SupportMapFragment mapFragment;
     List<LatLng> stopPositions;
     List<LatLng> busPositions;
     HashMap<LatLng, String> plateNumb;
     HashMap<LatLng, String> stopName;
     public static String subRouteId;
-    int DEFAULT_ZOOM = 10;
-    boolean once = true; // 只執行一次
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
+    Handler handler;
+    private String bundleSubRouteId;
+    private boolean first = true;
     ScheduledExecutorService executorService;
+    boolean once = true; // 只執行一次
+    int DEFAULT_ZOOM = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,24 +61,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             StrictMode.setThreadPolicy(policy);
         }
 
-        // 定時抓資料
+        new Thread(runnable).start();
+
+       /* // 定時抓資料
         executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                new Thread(mongoRunnable).start();
+
                 Log.d("Time", new Date().toString());
             }
-        }, 0, 20, TimeUnit.SECONDS);
-    }
-
-    // 設定 ViewPager
-    private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new GoFragment(), getString(R.string.go));
-        adapter.addFragment(new BackFragment(), getString(R.string.back));
-
-        viewPager.setAdapter(adapter);
+        }, 0, 20, TimeUnit.SECONDS);*/
     }
 
     // 設定地圖
@@ -85,14 +80,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         googleMap.clear();
 
-        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
-                this, R.raw.style_json
-        ));
-
         stopPositions = InterCityBus.getStopPosition(subRouteId);
         stopName = InterCityBus.getStopName(subRouteId);
         busPositions = InterCityBus.getBusPosition(subRouteId);
         plateNumb = InterCityBus.getPlateNumb(subRouteId);
+
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapsActivity.this, R.raw.style_json
+        ));
 
         for (int i = 0; i < stopPositions.size() - 1; i++){
 
@@ -131,22 +125,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Marker
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(busPositions.get(i).latitude,
-                                busPositions.get(i).longitude))
+                            busPositions.get(i).longitude))
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
                     .title(plateNumb.get(busPositions.get(i))));
 
         }
     }
 
-    // Thread
-    public class MongoRunnable implements Runnable {
-
-        Handler handler;
-        private String bundleSubRouteId;
-        private boolean first = true;
-        SupportMapFragment mapFragment;
-
-        @SuppressLint("HandlerLeak")
+    Runnable runnable = new Runnable() {
         @Override
         public void run() {
             // 將 Looper 與 worker thread 連結在一起
@@ -156,10 +142,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Bundle
             bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
             Log.d("bndSubRouteId", bundleSubRouteId + "");
+            subRouteId = bundleSubRouteId;
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    subRouteId = bundleSubRouteId;
+                    // 設定 Map
+                    mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                            .findFragmentById(R.id.map);
 
                     // 設定 ViewPager
                     mViewPager = findViewById(R.id.container);
@@ -171,6 +162,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 first = false;
                             }
                         }
+
                         @Override
                         public void onPageSelected(int position) {
                             switch (position) {
@@ -183,20 +175,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     Log.d("onPageSelected", subRouteId);
                                     break;
                             }
-
-                            // 更新UI
-                            mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                                    .findFragmentById(R.id.map);
+                            // 更新 Map
                             mapFragment.getMapAsync(MapsActivity.this);
                             once = true;
+                        }
+
+                        @Override
+                        public void onPageScrollStateChanged(int state) {
 
                         }
-                        @Override
-                        public void onPageScrollStateChanged(int state) {}
                     });
 
                     setupViewPager(mViewPager);
-
                     // 設定 Tabs
                     mTabLayout = findViewById(R.id.tabs);
                     mTabLayout.setupWithViewPager(mViewPager);
@@ -207,6 +197,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // blocking 呼叫，讓 message queue 可發送訊息給 consumer thread
             Looper.loop();
         }
+
+
+    };
+
+    // 設定 ViewPager
+    private void setupViewPager(ViewPager viewPager) {
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new GoFragment(), getString(R.string.go));
+        adapter.addFragment(new BackFragment(), getString(R.string.back));
+
+        mViewPager.setCurrentItem(0);
+        viewPager.setAdapter(adapter);
     }
 
     @Override
@@ -217,7 +219,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mongoThread.interrupt();
-        mongoThread = null;
     }
 }
