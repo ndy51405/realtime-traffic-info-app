@@ -1,5 +1,6 @@
 package tw.com.zenii.realtime_traffic_info_app.tabview;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -58,4 +59,6 @@ public class BackFragment extends Fragment {
         list.setAdapter(adapter);
         return view;
     }
+
+
 }
