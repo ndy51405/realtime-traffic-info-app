@@ -35,7 +35,8 @@ import tw.com.zenii.realtime_traffic_info_app.tabview.BackFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
 import tw.com.zenii.realtime_traffic_info_app.tabview.ViewPagerAdapter;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
+// 先關掉 Tab 那頁，測試是否能註解 thread
+public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap;
     SupportMapFragment mapFragment;
@@ -66,6 +67,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         new MapsAsync().execute();
 
+        // Bundle
+        bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
+        Log.d("bndSubRouteId", bundleSubRouteId + "");
+        subRouteId = bundleSubRouteId ;
+
         // 定時抓資料
         executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleAtFixedRate(new Runnable() {
@@ -78,14 +84,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //new Thread(runnable).start();
     }
 
-    class MapsAsync extends AsyncTask<Void, Void, Void> {
+    class MapsAsync extends AsyncTask<Void, Void, Void> implements OnMapReadyCallback {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            // Bundle
-            bundleSubRouteId = getIntent().getExtras().getString("bndSubRouteId");
-            Log.d("bndSubRouteId", bundleSubRouteId + "");
-            subRouteId = bundleSubRouteId;
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -119,7 +121,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     break;
                             }
                             // 更新 Map
-                            mapFragment.getMapAsync(MapsActivity.this);
+                            mapFragment.getMapAsync(MapsAsync.this);
                             once = true;
                         }
 
@@ -128,6 +130,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         }
                     });
+                    // 測試地圖
+                    mapFragment.getMapAsync(MapsAsync.this);
 
                     setupViewPager(mViewPager);
                     // 設定 Tabs
@@ -139,78 +143,88 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             return null;
         }
-    }
 
-    // 設定地圖
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+        // 設定地圖
+        @Override
+        public void onMapReady(GoogleMap googleMap) {
+            mMap = googleMap;
 
-        mMap.clear();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
 
-        stopPositions = InterCityBus.getStopPosition(subRouteId);
-        stopName = InterCityBus.getStopName(subRouteId);
-        busPositions = InterCityBus.getBusPosition(subRouteId);
-        plateNumb = InterCityBus.getPlateNumb(subRouteId);
+                    stopPositions = InterCityBus.getStopPosition(subRouteId);
+                    stopName = InterCityBus.getStopName(subRouteId);
+                    busPositions = InterCityBus.getBusPosition(subRouteId);
+                    plateNumb = InterCityBus.getPlateNumb(subRouteId);
 
-        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapsActivity.this, R.raw.style_json
-        ));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMap.clear();
 
-        for (int i = 0; i < stopPositions.size() - 1; i++){
+                            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapsActivity.this, R.raw.style_json
+                            ));
 
-            // 劃線的地方
-            mMap.addPolyline(new PolylineOptions()
-                    .addAll(stopPositions)
-                    .color(Color.rgb(91, 142, 125))
-                    .width(7));
+                            for (int i = 0; i < stopPositions.size() - 1; i++){
 
-            if (once) {
-                // 鏡頭初始位置
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(stopPositions.get(0).latitude,
-                        stopPositions.get(0).longitude), DEFAULT_ZOOM));
-                once = false;
-            }
+                                // 劃線的地方
+                                mMap.addPolyline(new PolylineOptions()
+                                        .addAll(stopPositions)
+                                        .color(Color.rgb(91, 142, 125))
+                                        .width(7));
+
+                                if (once) {
+                                    // 鏡頭初始位置
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(stopPositions.get(0).latitude,
+                                            stopPositions.get(0).longitude), DEFAULT_ZOOM));
+                                    once = false;
+                                }
+                            }
+
+                            for (int i = 0; i < stopPositions.size(); i++) {
+
+                                // Marker
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(new LatLng(stopPositions.get(i).latitude,
+                                                stopPositions.get(i).longitude))
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_stop))
+                                        .title(stopName.get(stopPositions.get(i))));
+
+                            }
+
+                            for (int i = 0; i < busPositions.size(); i++) {
+
+                                // 測試
+                                Log.d("Lat", "" + busPositions.get(i).latitude);
+                                Log.d("Lng", "" + busPositions.get(i).longitude);
+                                Log.d("PlateNumb", "" + plateNumb.get(busPositions.get(i)));
+
+                                // Marker
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(new LatLng(busPositions.get(i).latitude,
+                                                busPositions.get(i).longitude))
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
+                                        .title(plateNumb.get(busPositions.get(i))));
+
+                            }
+                        }
+                    });
+                }
+            };
+            new Thread(runnable).start();
         }
 
-        for (int i = 0; i < stopPositions.size(); i++) {
+        // 設定 ViewPager
+        private void setupViewPager(ViewPager viewPager) {
+            ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+            adapter.addFragment(new GoFragment(), getString(R.string.go));
+            adapter.addFragment(new BackFragment(), getString(R.string.back));
 
-            // Marker
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(stopPositions.get(i).latitude,
-                            stopPositions.get(i).longitude))
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_stop))
-                    .title(stopName.get(stopPositions.get(i))));
-
+            mViewPager.setCurrentItem(0);
+            viewPager.setAdapter(adapter);
         }
-
-        for (int i = 0; i < busPositions.size(); i++) {
-
-            // 測試
-            Log.d("Lat", "" + busPositions.get(i).latitude);
-            Log.d("Lng", "" + busPositions.get(i).longitude);
-            Log.d("PlateNumb", "" + plateNumb.get(busPositions.get(i)));
-
-            // Marker
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(busPositions.get(i).latitude,
-                            busPositions.get(i).longitude))
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
-                    .title(plateNumb.get(busPositions.get(i))));
-
-        }
-        Log.d("Time", new Date().toString());
     }
-
-    // 設定 ViewPager
-    private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new GoFragment(), getString(R.string.go));
-        adapter.addFragment(new BackFragment(), getString(R.string.back));
-
-        mViewPager.setCurrentItem(0);
-        viewPager.setAdapter(adapter);
-    }
-
 
     @Override
     public void finish() {

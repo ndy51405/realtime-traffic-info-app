@@ -38,27 +38,38 @@ public class BackFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.layout_item, container, false);
-        list = view.findViewById(R.id.list_stopName);
 
-        route = MapsActivity.subRouteId + "02";
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                route = MapsActivity.subRouteId + "02";
 
-        if (route != null) {
-            Log.d("MapsActivity.subRouteId", route);
-            stopName = InterCityBus.extractStopNames(route);
-            estimateTime = InterCityBus.extractEstimateTime(route);
-            stopList = new ArrayList();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        list = view.findViewById(R.id.list_stopName);
 
-            for (int i = 0; i < estimateTime.size() ; i++) {
-                Log.d("EstimateTime", estimateTime.get(i) + "\t" + stopName.get(i));
-                stopList.add(new Stop(estimateTime.get(i), stopName.get(i)));
+                        if (route != null) {
+                            Log.d("MapsActivity.subRouteId", route);
+                            stopName = InterCityBus.extractStopNames(route);
+                            estimateTime = InterCityBus.extractEstimateTime(route);
+                            stopList = new ArrayList();
+
+                            for (int i = 0; i < estimateTime.size() ; i++) {
+                                Log.d("EstimateTime", estimateTime.get(i) + "\t" + stopName.get(i));
+                                stopList.add(new Stop(estimateTime.get(i), stopName.get(i)));
+                            }
+                            adapter = new MyAdapter(getActivity(), stopList);
+                        }
+
+                        list.setAdapter(adapter);
+                    }
+                });
             }
+        };
 
-            adapter = new MyAdapter(getActivity(), stopList);
-
-        }
-        list.setAdapter(adapter);
+        new Thread(runnable).start();
         return view;
     }
-
 
 }
