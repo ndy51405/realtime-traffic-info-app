@@ -1,11 +1,12 @@
-package tw.com.zenii.realtime_traffic_info_app;
+package tw.com.zenii.realtime_traffic_info_app.bak;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import tw.com.zenii.realtime_traffic_info_app.R;
 
 public class IcbActivity extends AppCompatActivity {
 
@@ -22,11 +23,11 @@ public class IcbActivity extends AppCompatActivity {
         EditText txtSearch = findViewById(R.id.txtRoute);
         String route = txtSearch.getText().toString();
 
-        Intent intent = new Intent(this, RouteActivity.class);
+        /*Intent intent = new Intent(this, RouteActivity.class);
         Bundle bundle = new Bundle();
         bundle.putString("route", route);
         intent.putExtras(bundle);
-        startActivity(intent);
+        startActivity(intent);*/
 
     }
 }

@@ -9,7 +9,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 
-class Mongo {
+public class Mongo {
 
     static String call(String method, String arg0) {
         final String NAMESPACE = "http://ws.zenii.com.tw/";

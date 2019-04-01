@@ -6,35 +6,33 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
-import android.widget.TextView;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
-import java.util.List;
+
+import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
 
 public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private NavInterCityBus.MongoRunnable mongoRunnable = new NavInterCityBus.MongoRunnable();
-    private Thread mongoThread = new Thread(mongoRunnable);
     private SearchView searchView;
     private ListView list;
 
@@ -42,16 +40,16 @@ public class NavInterCityBus extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nav_inter_city_bus);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         // 在 searchView 內取值
@@ -60,7 +58,7 @@ public class NavInterCityBus extends AppCompatActivity
             @Override
             public boolean onQueryTextSubmit(String query) {
                 Log.d("search",query);
-                mongoThread.start();
+                new Thread(mongoRunnable).start();
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -81,27 +79,11 @@ public class NavInterCityBus extends AppCompatActivity
             }
         });
 
-        /*list.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.d("id is: ", ""+ parent.getId());
-                if (position == 0){
-                    Intent intent = new Intent();
-                    intent.setClass(NavInterCityBus.this, MapsActivity.class);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });*/
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -151,7 +133,7 @@ public class NavInterCityBus extends AppCompatActivity
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -172,23 +154,44 @@ public class NavInterCityBus extends AppCompatActivity
                 // 當訊息被送到 MongoRunnable 時的 callback
                 public void handleMessage(Message msgIn) {
                     final String subRouteId = msgIn.obj.toString();
-                    final List<String> results = new ArrayList<>();
+                    final ArrayList<String> routeNameResults = new ArrayList<>();
+                    final ArrayList<String> routeIdResults = new ArrayList<>();
                     String result;
+                    String resultId;
 
                     JsonArray resJa = InterCityBus.getRouteSearchResult(subRouteId);
                     for(JsonElement je : resJa) {
                         JsonObject jo = je.getAsJsonObject();
                         result = jo.get("SubRouteID").getAsString() + "\n" + jo.get("Headsign").getAsString();
+                        resultId = jo.get("SubRouteID").getAsString();
                         Log.d("result", result);
-                        results.add(result);
+                        routeNameResults.add(result);
+                        routeIdResults.add(resultId);
                     }
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             list = findViewById(R.id.listView);
-                            final ArrayAdapter adapter = new ArrayAdapter(NavInterCityBus.this, android.R.layout.simple_list_item_1, results);
+                            final ArrayAdapter adapter = new ArrayAdapter(NavInterCityBus.this, android.R.layout.simple_list_item_1, routeNameResults);
                             list.setAdapter(adapter);
+
+                            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                    Intent intent = new Intent();
+                                    intent.setClass(NavInterCityBus.this, MapsActivity.class);
+
+                                    String bundleResult = routeIdResults.get(position);
+                                    Log.d("onItemClick", routeIdResults.get(position)+"");
+
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("bndSubRouteId", bundleResult);
+                                    intent.putExtras(bundle);
+
+                                    startActivity(intent);
+                                }
+                            });
                         }
                     });
                 }
