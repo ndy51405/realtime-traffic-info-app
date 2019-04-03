@@ -1,6 +1,8 @@
 package tw.com.zenii.realtime_traffic_info_app;
 
 import android.annotation.SuppressLint;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 
@@ -27,7 +30,6 @@ import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 
-import tw.com.zenii.realtime_traffic_info_app.tabview.GoFragment;
 
 public class NavInterCityBus extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -120,17 +122,13 @@ public class NavInterCityBus extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+            Fragment fragment = new TrackerFragment();
+            FragmentTransaction transaction = getFragmentManager().beginTransaction();
 
-        } else if (id == R.id.nav_slideshow) {
+            transaction.replace(R.id.content, fragment);
+            transaction.addToBackStack(null);
 
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+            transaction.commit();
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -159,7 +157,7 @@ public class NavInterCityBus extends AppCompatActivity
                     String result;
                     String resultId;
 
-                    JsonArray resJa = InterCityBus.getRouteSearchResult(subRouteId);
+                    JsonArray resJa = InterCityBusHandler.getRouteSearchResult(subRouteId);
                     for(JsonElement je : resJa) {
                         JsonObject jo = je.getAsJsonObject();
                         result = jo.get("SubRouteID").getAsString() + "\n" + jo.get("Headsign").getAsString();

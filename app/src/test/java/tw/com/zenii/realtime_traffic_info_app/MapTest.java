@@ -24,7 +24,7 @@ import static com.mongodb.client.model.Filters.eq;
 
 public class MapTest extends AppCompatActivity {
 
-    private MongoRunnable mongoRunnable = new MongoRunnable();
+    /*private MongoRunnable mongoRunnable = new MongoRunnable();
     private Thread mongoThread = new Thread(mongoRunnable);
 
     @Override
@@ -82,8 +82,8 @@ public class MapTest extends AppCompatActivity {
 
             // blocking 呼叫，讓 message queue 可發送訊息給 consumer thread
             Looper.loop();
-        }
-    }
+        }*/
+    //}
 
     public void closeActivity(View view) {
         finish();

@@ -65,8 +65,8 @@ public class RouteActivity extends AppCompatActivity {
                 // 當訊息被送到 MongoRunnable 時的 callback
                 public void handleMessage(Message msgIn) {
                     final String subRouteId = msgIn.obj.toString();
-                    final List<String> estimateTimes = InterCityBus.extractEstimateTime(subRouteId);
-                    final List<String> stopNames = InterCityBus.extractStopNames(subRouteId);
+                    final List<String> estimateTimes = InterCityBusHandler.getEstimateTime(subRouteId);
+                    final List<String> stopNames = InterCityBusHandler.getStopNames(subRouteId);
                     /*final List<String> plateNumbs = InterCityBus.extractPlateNumbs(subRouteId);*/
 
                     Log.d("estimateTimes.size()", String.valueOf(estimateTimes.size()));

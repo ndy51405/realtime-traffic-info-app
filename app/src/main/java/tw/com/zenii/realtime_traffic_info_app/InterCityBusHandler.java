@@ -45,7 +45,7 @@ class InterCityBusHandler {
     public static List<String> getEstimateTime(String subRouteId) {
         List<String> estimateTimes = new ArrayList<>();
 
-        String results = Mongo.call("getEstimate", subRouteId);
+        String results = Mongo.call("getEstimated", subRouteId);
         if(results == null) { return estimateTimes; }
         JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
 
@@ -65,7 +65,7 @@ class InterCityBusHandler {
     static List<String> getStopNames(String subRouteId) {
         List<String> stopNames = new ArrayList<>();
 
-        String results = Mongo.call("getEstimate", subRouteId);
+        String results = Mongo.call("getEstimated", subRouteId);
         if(results == null) { return stopNames; }
         JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
 
@@ -141,7 +141,7 @@ class InterCityBusHandler {
         double lng;
         List<LatLng> busPositions = new ArrayList<>();
 
-        String results = Mongo.call("getStopOfRoute", subRouteId);
+        String results = Mongo.call("getFrequency", subRouteId);
         if(results == null) { return busPositions; }
         JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
 
@@ -164,7 +164,7 @@ class InterCityBusHandler {
         Map<LatLng, String> plateNumb = new HashMap<>();
         String numb;
 
-        String results = Mongo.call("getStopOfRoute", subRouteId);
+        String results = Mongo.call("getFrequency", subRouteId);
         if(results == null) { return plateNumb; }
         JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
 
