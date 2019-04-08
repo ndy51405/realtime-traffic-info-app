@@ -20,12 +20,11 @@ public class TrackerAdapter extends BaseAdapter {
 
     private class ViewHolder {
         TextView txtPlateNumb;
-        TextView txtEstimateTime;
-        TextView txtStopName;
-        public ViewHolder(TextView txtEstimateTime, TextView txtPlateNumb, TextView txtStopName){
-            this.txtEstimateTime = txtEstimateTime;
+        TextView txtNearStop;
+
+        public ViewHolder(TextView txtNearStop, TextView txtPlateNumb){
+            this.txtNearStop = txtNearStop;
             this.txtPlateNumb = txtPlateNumb;
-            this.txtStopName = txtStopName;
         }
     }
 
@@ -54,9 +53,8 @@ public class TrackerAdapter extends BaseAdapter {
             convertView = myInflater.inflate(R.layout.listview_tracker, null);
 
             holder = new ViewHolder(
-                    (TextView) convertView.findViewById(R.id.txtEstimateTime),
-                    (TextView) convertView.findViewById(R.id.txtPlateNumber),
-                    (TextView) convertView.findViewById(R.id.txtStopName)
+                    (TextView) convertView.findViewById(R.id.txtNearStop),
+                    (TextView) convertView.findViewById(R.id.txtPlateNumber)
             );
 
             convertView.setTag(holder);
@@ -67,9 +65,8 @@ public class TrackerAdapter extends BaseAdapter {
 
         Tracker tracker = (Tracker) getItem(position);
 
-        holder.txtEstimateTime.setText(tracker.getEstimateTime());
+        holder.txtNearStop.setText(tracker.getNearStop());
         holder.txtPlateNumb.setText(tracker.getPlateNumb());
-        holder.txtStopName.setText(tracker.getStopName());
 
         return convertView;
     }

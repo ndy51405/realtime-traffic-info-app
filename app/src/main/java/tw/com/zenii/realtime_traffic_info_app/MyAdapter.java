@@ -53,7 +53,7 @@ public class MyAdapter extends BaseAdapter{
             convertView = myInflater.inflate(R.layout.listview_tabs, null);
 
             holder = new ViewHolder(
-                    (TextView) convertView.findViewById(R.id.txtEstimateTime),
+                    (TextView) convertView.findViewById(R.id.txtNearStop),
                     (TextView) convertView.findViewById(R.id.txtStopName)
             );
 

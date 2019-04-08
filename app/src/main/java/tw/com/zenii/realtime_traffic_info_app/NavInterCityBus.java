@@ -81,6 +81,22 @@ public class NavInterCityBus extends AppCompatActivity
             }
         });
 
+        int id = getIntent().getIntExtra("id", 0);
+        if (id == 1) {
+
+            Fragment fragment = new TrackerFragment();
+            getFragmentManager().beginTransaction()
+                                .replace(R.id.content, fragment)
+                                .addToBackStack(null)
+                                .commit();
+            String trackPlateNumb = getIntent().getStringExtra("plateNumb");
+            Log.d("trackPlateNumb", trackPlateNumb);
+
+            Bundle bundle = new Bundle();
+            bundle.putString("trackPlateNumb", trackPlateNumb);
+            fragment.setArguments(bundle);
+        }
+
     }
 
     @Override

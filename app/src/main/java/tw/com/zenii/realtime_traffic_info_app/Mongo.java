@@ -13,7 +13,8 @@ public class Mongo {
 
     static String call(String method, String arg0) {
         final String NAMESPACE = "http://ws.zenii.com.tw/";
-        final String URL = "http://192.168.1.239:9080/MongoService/services/Query?wsdl";
+        // 239 92
+        final String URL = "http://192.168.1.92:9080/MongoService/services/Query?wsdl";
 
         SoapObject request = new SoapObject(NAMESPACE, method);
         request.addProperty("arg0", arg0);

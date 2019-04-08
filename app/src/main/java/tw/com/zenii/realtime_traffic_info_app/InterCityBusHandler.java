@@ -180,5 +180,29 @@ class InterCityBusHandler {
         }
         return plateNumb;
     }
+
+    // 取得客運之方位角 Azimuth
+    public static Map<LatLng, Integer> getAzimuth(String subRouteId){
+        double lat;
+        double lng;
+        Map<LatLng, Integer> azimuth = new HashMap<>();
+        int numb;
+
+        String results = Mongo.call("getFrequency", subRouteId);
+        if(results == null) { return azimuth; }
+        JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
+
+        for(JsonElement je : ja){
+            JsonObject res = je.getAsJsonObject();
+            JsonObject stops = res.get("BusPosition").getAsJsonObject();
+            numb = res.get("Azimuth").getAsInt();
+            lat = stops.getAsJsonObject()
+                    .get("PositionLat").getAsDouble();
+            lng = stops.getAsJsonObject()
+                    .get("PositionLon").getAsDouble();
+            azimuth.put(new LatLng(lat, lng), numb);
+        }
+        return azimuth;
+    }
 }
 

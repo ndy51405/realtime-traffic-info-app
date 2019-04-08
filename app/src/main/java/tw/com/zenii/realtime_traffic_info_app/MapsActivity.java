@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -32,6 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import tw.com.zenii.realtime_traffic_info_app.bak.MainActivity;
+
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap;
@@ -40,6 +43,7 @@ public class MapsActivity extends FragmentActivity {
     static List<LatLng> busPositions;
     static Map<LatLng, String> plateNumb;
     static Map<LatLng, String> stopName;
+    static Map<LatLng, Integer> azimuth;
     public static String subRouteId;
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
@@ -120,6 +124,7 @@ public class MapsActivity extends FragmentActivity {
                     stopName = InterCityBusHandler.getStopName(mapSubRouteId);
                     busPositions = InterCityBusHandler.getBusPosition(mapSubRouteId);
                     plateNumb = InterCityBusHandler.getPlateNumb(mapSubRouteId);
+                    azimuth = InterCityBusHandler.getAzimuth(mapSubRouteId);
 
                     runOnUiThread(new Runnable() {
 
@@ -173,6 +178,7 @@ public class MapsActivity extends FragmentActivity {
                                                 busPositions.get(i).longitude))
                                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.bus))
                                         .title(plateNumb.get(busPositions.get(i))));
+                                        //.rotation(azimuth.get(busPositions.get(i))));
 
                             }
 
@@ -180,21 +186,21 @@ public class MapsActivity extends FragmentActivity {
                                 @Override
                                 public boolean onMarkerClick(Marker marker) {
                                     Log.d("onMarkerClick", "click1");
+                                    String trackPlateNumb;
                                     for (int i = 0; i < busPositions.size(); i++) {
                                         if (marker.equals(busMarkerList[i])) {
+                                            trackPlateNumb = plateNumb.get(busPositions.get(i));
                                             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                                            final String finalTrackPlateNumb = trackPlateNumb;
                                             builder.setTitle("是否追蹤此車？")
-                                                    .setMessage("這台車牌是：" + plateNumb.get(busPositions.get(i)))
+                                                    .setMessage("這台車牌是：" + trackPlateNumb)
                                                     .setPositiveButton("是", new DialogInterface.OnClickListener() {
                                                         @Override
                                                         public void onClick(DialogInterface dialog, int which) {
-                                                            Fragment fragment = new TrackerFragment();
-                                                            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-
-                                                            transaction.replace(R.id.content, fragment);
-                                                            transaction.addToBackStack(null);
-
-                                                            transaction.commit();
+                                                            Intent intent = new Intent(MapsActivity.this, NavInterCityBus.class);
+                                                            intent.putExtra("id",1);
+                                                            intent.putExtra("plateNumb", finalTrackPlateNumb);
+                                                            startActivity(intent);
                                                         }
                                                     })
                                                     .setNegativeButton("否", new DialogInterface.OnClickListener() {

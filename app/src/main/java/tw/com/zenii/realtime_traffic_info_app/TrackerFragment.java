@@ -24,8 +24,9 @@ public class TrackerFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_tracker, container, false);
         list = view.findViewById(R.id.list_tracker);
 
-        trackers_list.add(new Tracker("15", "FT-707", "酒泉重慶路口"));
-        trackers_list.add(new Tracker("12", "FJ-902", "捷運大橋頭站"));
+        String platNumb = getArguments().getString("trackPlateNumb");
+
+        trackers_list.add(new Tracker("捷運大橋頭站", platNumb));
 
         adapter = new TrackerAdapter(getActivity(), trackers_list);
         list.setAdapter(adapter);

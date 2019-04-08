@@ -1,16 +1,20 @@
 package tw.com.zenii.realtime_traffic_info_app;
 
 public class Tracker {
-    private String estimateTime;
+    private String nearStop;
     private String plateNumb;
-    private String stopName;
 
-    public String getEstimateTime() {
-        return estimateTime;
+    public Tracker(String nearStop, String plateNumb) {
+        this.nearStop = nearStop;
+        this.plateNumb = plateNumb;
     }
 
-    public void setEstimateTime(String estimateTime) {
-        this.estimateTime = estimateTime;
+    public String getNearStop() {
+        return nearStop;
+    }
+
+    public void setNearStop(String nearStop) {
+        this.nearStop = nearStop;
     }
 
     public String getPlateNumb() {
@@ -19,19 +23,5 @@ public class Tracker {
 
     public void setPlateNumb(String plateNumb) {
         this.plateNumb = plateNumb;
-    }
-
-    public String getStopName() {
-        return stopName;
-    }
-
-    public void setStopName(String stopName) {
-        this.stopName = stopName;
-    }
-
-    public Tracker(String estimateTime, String plateNumb, String stopName) {
-        this.estimateTime = estimateTime;
-        this.plateNumb = plateNumb;
-        this.stopName = stopName;
     }
 }
