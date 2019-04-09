@@ -3,8 +3,10 @@ package tw.com.zenii.realtime_traffic_info_app;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -26,6 +28,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class MapsActivity extends FragmentActivity {
     static Map<LatLng, String> plateNumb;
     static Map<LatLng, String> stopName;
     static Map<LatLng, Integer> azimuth;
+    static Map<String, String> nearStop;
     public static String subRouteId;
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
@@ -52,6 +56,13 @@ public class MapsActivity extends FragmentActivity {
     ScheduledExecutorService executorService;
     boolean once = true; // 只執行一次
     int DEFAULT_ZOOM = 10;
+    private String trackNearStop = "捷運大橋頭站";
+    private String trackPlateNumb = "KKA-0251";
+    private String trackBusStatus = "客滿";
+    private String trackA2EventType = "離站";
+    private String trackSubRouteName = "9001";
+    private TrackerDB helper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +125,7 @@ public class MapsActivity extends FragmentActivity {
         // 設定地圖
         @Override
         public void onMapReady(GoogleMap googleMap) {
+
             mMap = googleMap;
 
             Runnable runnable = new Runnable() {
@@ -125,6 +137,8 @@ public class MapsActivity extends FragmentActivity {
                     busPositions = InterCityBusHandler.getBusPosition(mapSubRouteId);
                     plateNumb = InterCityBusHandler.getPlateNumb(mapSubRouteId);
                     azimuth = InterCityBusHandler.getAzimuth(mapSubRouteId);
+                    /*nearStop = InterCityBusHandler.getNearStop("KKA-0509");
+                    Log.d("trackNearStop", nearStop.get("KKA-0509")+"null");*/
 
                     runOnUiThread(new Runnable() {
 
@@ -185,22 +199,37 @@ public class MapsActivity extends FragmentActivity {
                             mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                                 @Override
                                 public boolean onMarkerClick(Marker marker) {
-                                    Log.d("onMarkerClick", "click1");
-                                    String trackPlateNumb;
+
                                     for (int i = 0; i < busPositions.size(); i++) {
                                         if (marker.equals(busMarkerList[i])) {
                                             trackPlateNumb = plateNumb.get(busPositions.get(i));
+
                                             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                                            final String finalTrackPlateNumb = trackPlateNumb;
                                             builder.setTitle("是否追蹤此車？")
                                                     .setMessage("這台車牌是：" + trackPlateNumb)
                                                     .setPositiveButton("是", new DialogInterface.OnClickListener() {
                                                         @Override
                                                         public void onClick(DialogInterface dialog, int which) {
+                                                            Log.d("trackPlateNumb", trackPlateNumb+"null");
+                                                            nearStop = InterCityBusHandler.getNearStop(trackPlateNumb);
+                                                            trackNearStop = nearStop.get(trackPlateNumb);
+                                                            Log.d("trackNearStop", nearStop.get(trackPlateNumb)+"null");
+                                                            /*nearStop = InterCityBusHandler.getNearStop("KKA-0251");
+                                                            Log.d("trackNearStop", nearStop.get("KKA-0251")+"null");*/
+
+                                                            helper = new TrackerDB(MapsActivity.this, "Tracker", null, 1);
+                                                            ContentValues values = new ContentValues();
+                                                            values.put("nearStop", trackNearStop);
+                                                            values.put("plateNumb", trackPlateNumb);
+                                                            values.put("busStatus", trackBusStatus);
+                                                            values.put("a2EventType", trackA2EventType);
+                                                            values.put("subRouteName", trackSubRouteName);
+                                                            long id = helper.getWritableDatabase().insert("tracker", null, values);
+                                                            Log.d("ADD", id+"");
                                                             Intent intent = new Intent(MapsActivity.this, NavInterCityBus.class);
                                                             intent.putExtra("id",1);
-                                                            intent.putExtra("plateNumb", finalTrackPlateNumb);
                                                             startActivity(intent);
+
                                                         }
                                                     })
                                                     .setNegativeButton("否", new DialogInterface.OnClickListener() {

@@ -19,6 +19,7 @@ public class RouteActivity extends AppCompatActivity {
     private MongoRunnable mongoRunnable = new MongoRunnable();
     private Thread mongoThread = new Thread(mongoRunnable);
 
+    // 暫時沒有使用此 Activity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

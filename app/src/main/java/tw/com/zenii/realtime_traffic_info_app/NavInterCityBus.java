@@ -83,20 +83,12 @@ public class NavInterCityBus extends AppCompatActivity
 
         int id = getIntent().getIntExtra("id", 0);
         if (id == 1) {
-
             Fragment fragment = new TrackerFragment();
             getFragmentManager().beginTransaction()
-                                .replace(R.id.content, fragment)
-                                .addToBackStack(null)
-                                .commit();
-            String trackPlateNumb = getIntent().getStringExtra("plateNumb");
-            Log.d("trackPlateNumb", trackPlateNumb);
-
-            Bundle bundle = new Bundle();
-            bundle.putString("trackPlateNumb", trackPlateNumb);
-            fragment.setArguments(bundle);
+                    .replace(R.id.content, fragment)
+                    .addToBackStack(null)
+                    .commit();
         }
-
     }
 
     @Override
@@ -134,16 +126,17 @@ public class NavInterCityBus extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
+        // Fragment 側邊清單換頁
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            Fragment fragment = new TrackerFragment();
+        Fragment fragment = new TrackerFragment();
+
+        if (id == R.id.nav_tracker) {
+
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
 
             transaction.replace(R.id.content, fragment);
             transaction.addToBackStack(null);
-
             transaction.commit();
         }
 
@@ -168,8 +161,8 @@ public class NavInterCityBus extends AppCompatActivity
                 // 當訊息被送到 MongoRunnable 時的 callback
                 public void handleMessage(Message msgIn) {
                     final String subRouteId = msgIn.obj.toString();
-                    final ArrayList<String> routeNameResults = new ArrayList<>();
-                    final ArrayList<String> routeIdResults = new ArrayList<>();
+                    final ArrayList<String> routeNameResults = new ArrayList<>(); // 路線名稱
+                    final ArrayList<String> routeIdResults = new ArrayList<>(); // 路線代號
                     String result;
                     String resultId;
 
@@ -199,6 +192,7 @@ public class NavInterCityBus extends AppCompatActivity
                                     String bundleResult = routeIdResults.get(position);
                                     Log.d("onItemClick", routeIdResults.get(position)+"");
 
+                                    // 傳送路線名稱以製作地圖
                                     Bundle bundle = new Bundle();
                                     bundle.putString("bndSubRouteId", bundleResult);
                                     intent.putExtras(bundle);

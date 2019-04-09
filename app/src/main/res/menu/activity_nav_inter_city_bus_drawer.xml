@@ -5,7 +5,7 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_camera"
+            android:id="@+id/nav_tracker"
             android:icon="@drawable/trace"
             android:title="目前追蹤清單" />
     </group>

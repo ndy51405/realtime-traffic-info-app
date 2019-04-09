@@ -5,8 +5,8 @@ public class Stop {
     private String stopName;
 
     public Stop(String estimateTime, String stopName) {
-        this.estimateTime = estimateTime;
-        this.stopName = stopName;
+        this.estimateTime = estimateTime; // 預計到站時間
+        this.stopName = stopName; // 站牌名稱
     }
 
     public String getEstimateTime() {

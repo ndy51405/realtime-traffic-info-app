@@ -19,12 +19,21 @@ public class TrackerAdapter extends BaseAdapter {
     }
 
     private class ViewHolder {
-        TextView txtPlateNumb;
-        TextView txtNearStop;
+        TextView txtPlateNumb; // 車牌名稱
+        TextView txtNearStop; // 最近站牌
+        TextView txtBusStatus; // 客運狀態（ex: 客滿）
+        TextView txtA2EventType; // 離站進站
+        TextView txtSubRouteName; // 客運路線名稱
 
-        public ViewHolder(TextView txtNearStop, TextView txtPlateNumb){
+        public ViewHolder(TextView txtNearStop, TextView txtPlateNumb,
+                          TextView txtBusStatus, TextView txtA2EventType, TextView txtSubRouteName){
+
             this.txtNearStop = txtNearStop;
             this.txtPlateNumb = txtPlateNumb;
+            this.txtBusStatus = txtBusStatus;
+            this.txtA2EventType = txtA2EventType;
+            this.txtSubRouteName = txtSubRouteName;
+
         }
     }
 
@@ -54,7 +63,10 @@ public class TrackerAdapter extends BaseAdapter {
 
             holder = new ViewHolder(
                     (TextView) convertView.findViewById(R.id.txtNearStop),
-                    (TextView) convertView.findViewById(R.id.txtPlateNumber)
+                    (TextView) convertView.findViewById(R.id.txtPlateNumber),
+                    (TextView) convertView.findViewById(R.id.txtBusStatus),
+                    (TextView) convertView.findViewById(R.id.txtA2EventType),
+                    (TextView) convertView.findViewById(R.id.txtSubRouteName)
             );
 
             convertView.setTag(holder);
@@ -67,7 +79,13 @@ public class TrackerAdapter extends BaseAdapter {
 
         holder.txtNearStop.setText(tracker.getNearStop());
         holder.txtPlateNumb.setText(tracker.getPlateNumb());
+        holder.txtBusStatus.setText(tracker.getBusStatus());
+        holder.txtA2EventType.setText(tracker.getA2EventType());
+        holder.txtSubRouteName.setText(tracker.getSubRouteName());
 
         return convertView;
     }
+
+
+
 }

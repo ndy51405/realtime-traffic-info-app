@@ -181,7 +181,7 @@ class InterCityBusHandler {
         return plateNumb;
     }
 
-    // 取得客運之方位角 Azimuth
+    // 取得客運之方位角 Azimuth 暫時沒有用，看之後要不要新增功能
     public static Map<LatLng, Integer> getAzimuth(String subRouteId){
         double lat;
         double lng;
@@ -203,6 +203,27 @@ class InterCityBusHandler {
             azimuth.put(new LatLng(lat, lng), numb);
         }
         return azimuth;
+    }
+
+    // 取得最近站牌
+    public static Map<String, String> getNearStop(String subRouteId){
+        Map<String, String> nearStop = new HashMap<>();
+        String name;
+        String numb;
+
+        String results = Mongo.call("getNearStop", subRouteId);
+        if(results == null) { return nearStop; }
+        JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
+
+        for(JsonElement je : ja){
+            JsonObject res = je.getAsJsonObject();
+            JsonObject stops = res.get("StopName").getAsJsonObject();
+            numb = res.get("PlateNumb").getAsString();
+            name = stops.getAsJsonObject()
+                    .get("Zh_tw").getAsString();
+            nearStop.put(numb, name);
+        }
+        return nearStop;
     }
 }
 
