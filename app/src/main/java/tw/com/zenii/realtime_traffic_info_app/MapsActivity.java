@@ -36,8 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import tw.com.zenii.realtime_traffic_info_app.bak.MainActivity;
-
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap;
@@ -48,6 +46,7 @@ public class MapsActivity extends FragmentActivity {
     static Map<LatLng, String> stopName;
     static Map<LatLng, Integer> azimuth;
     static Map<String, String> nearStop;
+    static Map<String, String> RouteName;
     public static String subRouteId;
     private ViewPager mViewPager;
     private TabLayout mTabLayout;
@@ -56,11 +55,11 @@ public class MapsActivity extends FragmentActivity {
     ScheduledExecutorService executorService;
     boolean once = true; // 只執行一次
     int DEFAULT_ZOOM = 10;
-    private String trackNearStop = "捷運大橋頭站";
-    private String trackPlateNumb = "KKA-0251";
+    private String trackNearStop;
+    private String trackPlateNumb;
     private String trackBusStatus = "客滿";
     private String trackA2EventType = "離站";
-    private String trackSubRouteName = "9001";
+    private String trackRouteName = "9001";
     private TrackerDB helper;
 
 
@@ -137,8 +136,6 @@ public class MapsActivity extends FragmentActivity {
                     busPositions = InterCityBusHandler.getBusPosition(mapSubRouteId);
                     plateNumb = InterCityBusHandler.getPlateNumb(mapSubRouteId);
                     azimuth = InterCityBusHandler.getAzimuth(mapSubRouteId);
-                    /*nearStop = InterCityBusHandler.getNearStop("KKA-0509");
-                    Log.d("trackNearStop", nearStop.get("KKA-0509")+"null");*/
 
                     runOnUiThread(new Runnable() {
 
@@ -212,10 +209,13 @@ public class MapsActivity extends FragmentActivity {
                                                         public void onClick(DialogInterface dialog, int which) {
                                                             Log.d("trackPlateNumb", trackPlateNumb+"null");
                                                             nearStop = InterCityBusHandler.getNearStop(trackPlateNumb);
+                                                            RouteName = InterCityBusHandler.getSubRouteName(trackPlateNumb);
+
                                                             trackNearStop = nearStop.get(trackPlateNumb);
-                                                            Log.d("trackNearStop", nearStop.get(trackPlateNumb)+"null");
-                                                            /*nearStop = InterCityBusHandler.getNearStop("KKA-0251");
-                                                            Log.d("trackNearStop", nearStop.get("KKA-0251")+"null");*/
+                                                            trackRouteName = RouteName.get(trackPlateNumb);
+
+                                                            Log.d("trackNearStop", trackNearStop+"");
+                                                            Log.d("trackSubRouteName", trackRouteName+"");
 
                                                             helper = new TrackerDB(MapsActivity.this, "Tracker", null, 1);
                                                             ContentValues values = new ContentValues();
@@ -223,7 +223,7 @@ public class MapsActivity extends FragmentActivity {
                                                             values.put("plateNumb", trackPlateNumb);
                                                             values.put("busStatus", trackBusStatus);
                                                             values.put("a2EventType", trackA2EventType);
-                                                            values.put("subRouteName", trackSubRouteName);
+                                                            values.put("routeName", trackRouteName);
                                                             long id = helper.getWritableDatabase().insert("tracker", null, values);
                                                             Log.d("ADD", id+"");
                                                             Intent intent = new Intent(MapsActivity.this, NavInterCityBus.class);

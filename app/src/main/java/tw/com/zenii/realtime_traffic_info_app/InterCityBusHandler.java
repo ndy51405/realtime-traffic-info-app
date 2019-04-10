@@ -206,12 +206,33 @@ class InterCityBusHandler {
     }
 
     // 取得最近站牌
-    public static Map<String, String> getNearStop(String subRouteId){
+    public static Map<String, String> getNearStop(String plateNumb){
         Map<String, String> nearStop = new HashMap<>();
         String name;
         String numb;
 
-        String results = Mongo.call("getNearStop", subRouteId);
+        String results = Mongo.call("getNearStop", plateNumb);
+        if(results == null) { return nearStop; }
+        JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
+
+        for(JsonElement je : ja){
+            JsonObject res = je.getAsJsonObject();
+            JsonObject stops = res.get("StopName").getAsJsonObject();
+            numb = res.get("PlateNumb").getAsString();
+            name = stops.getAsJsonObject()
+                    .get("Zh_tw").getAsString();
+            nearStop.put(numb, name);
+        }
+        return nearStop;
+    }
+
+    // 取得路線名稱
+    public static Map<String, String> getSubRouteName(String plateNumb){
+        Map<String, String> nearStop = new HashMap<>();
+        String name;
+        String numb;
+
+        String results = Mongo.call("getNearStop", plateNumb);
         if(results == null) { return nearStop; }
         JsonArray ja = new JsonParser().parse(results).getAsJsonArray();
 

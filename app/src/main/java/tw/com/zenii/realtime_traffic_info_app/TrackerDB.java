@@ -26,7 +26,7 @@ public class TrackerDB extends SQLiteOpenHelper {
                 " plateNumb VARCHAR , " +
                 " busStatus VARCHAR , " +
                 " a2EventType VARCHAR , " +
-                " subRouteName VARCHAR)");
+                " routeName VARCHAR)");
     }
 
     @Override

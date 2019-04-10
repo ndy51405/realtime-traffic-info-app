@@ -20,7 +20,7 @@
         android:theme="@style/AppTheme">
         <activity android:name=".bak.MainActivity" />
         <activity android:name=".bak.IcbActivity" />
-        <activity android:name=".RouteActivity" />
+        <activity android:name=".bak.RouteActivity" />
         <activity
             android:name=".NavInterCityBus"
             android:label="@string/app_name"
